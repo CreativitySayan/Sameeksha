@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayan Das | Software Developer</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter for a clean, techy look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Typed.js for the typing animation -->
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+    <!-- Three.js for 3D particle background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Custom styles */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden; /* Prevents horizontal scroll */
+        }
+
+        /* Canvas for three.js background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Base style for all sections */
+        .section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+            position: relative; /* Needed to be on top of the particles */
+            z-index: 1;
+            width: 100%;
+        }
+        
+        /* Style for the full-screen home section */
+        #home {
+            min-height: 100vh;
+        }
+
+        /* Overrides for subsequent sections to create the linear, centered flow */
+        #about, #resume, #projects, #contact {
+            min-height: auto;
+            padding-top: 10rem;
+            padding-bottom: 10rem;
+        }
+
+        /* NEW: Advanced Scroll Animation Classes */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+
+        /* iOS-style Navigation Dock */
+        .ios-dock {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* For Safari */
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 1rem; /* Space between text links */
+            z-index: 50;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .ios-dock a {
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .ios-dock a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        
+        /* Bento Grid for About Section */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: minmax(150px, auto);
+            gap: 1rem;
+            width: 100%;
+            max-width: 1024px;
+        }
+        .bento-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .bento-item:hover {
+            transform: scale(1.02);
+            border-color: rgba(6, 182, 212, 0.5);
+        }
+        .bento-item.col-span-2 { grid-column: span 2; }
+        .bento-item.row-span-2 { grid-row: span 2; }
+        
+        /* Project Card Glow Effect */
+        .project-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            padding-top: 150%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .project-card:hover::before {
+            opacity: 1;
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+        
+        /* Style for the typing cursor */
+        .typed-cursor {
+            color: #06b6d4;
+            font-size: 2.5rem;
+        }
+
+        /* Skill Tag Hover Effect */
+        .skill-tag {
+            transition: all 0.2s ease;
+        }
+        .skill-tag:hover {
+            transform: scale(1.05);
+            background-color: #06b6d4;
+            color: #000;
+        }
+
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: #27272a; /* zinc-800 */
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+        }
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+        .timeline-item.left { left: 0; }
+        .timeline-item.right { left: 50%; }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: #000;
+            border: 4px solid #06b6d4;
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .timeline-item.right::after { left: -10px; }
+        .timeline-content {
+            padding: 20px 30px;
+            background-color: rgba(39, 39, 42, 0.5); /* zinc-800 with opacity */
+            border: 1px solid #3f3f46; /* zinc-700 */
+            position: relative;
+            border-radius: 1rem;
+        }
+        @media screen and (max-width: 768px) {
+            .timeline-container::after { left: 20px; }
+            .timeline-item { width: 100%; padding-left: 60px; padding-right: 15px; }
+            .timeline-item.right { left: 0%; }
+            .timeline-item.left::after, .timeline-item.right::after { left: 10px; }
+        }
+
+    </style>
+</head>
+<body class="bg-black">
+
+    <!-- Canvas for 3D background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Main Content Wrapper -->
+    <div class="relative z-10">
+
+        <!-- iOS Style Navigation Dock -->
+        <nav class="ios-dock">
+            <a href="#home" class="text-gray-300 hover:text-white transition-colors duration-300">Home</a>
+            <a href="#about" class="text-gray-300 hover:text-white transition-colors duration-300">About</a>
+            <a href="#resume" class="text-gray-300 hover:text-white transition-colors duration-300">My Journey</a>
+            <a href="#Career" class="text-gray-300 hover:text-white transition-colors duration-300">My Career</a>
+            <a href="#projects" class="text-gray-300 hover:text-white transition-colors duration-300">Projects</a>
+            <a href="#contact" class="text-gray-300 hover:text-white transition-colors duration-300">Contact</a>
+        </nav>
+
+        <!-- Home Section -->
+        <section id="home" class="section text-center">
+            <h1 class="text-6xl md:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-400 to-cyan-500 animate-on-scroll">Sameeksha</h1>
+            <p class="text-2xl md:text-3xl text-gray-300 mb-8 animate-on-scroll" style="transition-delay: 0.2s;"><span id="typing-effect"></span></p>
+            <a href="#projects" class="bg-cyan-500 text-black font-bold py-3 px-8 rounded-lg hover:bg-cyan-400 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/30 animate-on-scroll" style="transition-delay: 0.4s;">
+                Explore My Work
+            </a>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="section">
+            <div class="container mx-auto max-w-5xl text-center">
+                <h2 class="text-5xl font-extrabold mb-12 animate-on-scroll">About Me</h2>
+                <div class="bento-grid">
+                    <div class="bento-item col-span-2 row-span-2 text-left animate-on-scroll" style="transition-delay: 0.2s;">
+                        <h3 class="text-2xl font-bold text-cyan-400 mb-4">Who I Am</h3>
+                        <p class="text-gray-300 text-lg leading-relaxed mb-6">
+                            Hello! I'm Sayan Das, a software developer driven by a passion for building beautiful, functional, and impactful digital experiences. From crafting pixel-perfect user interfaces to engineering robust back-end systems, I find joy in the entire process of bringing ideas to life through code.
+                        </p>
+                        <p class="text-gray-300 text-lg leading-relaxed">
+                          I have a strong passion for continuous learning and innovation in technology. I thrive on tackling complex challenges, solving problems with creativity, and building impactful solutions that push the boundaries of my skills and knowledge.
+                        </p>
+                    </div>
+                    <div class="bento-item text-left animate-on-scroll" style="transition-delay: 0.4s;">
+                         <h3 class="text-xl font-bold text-cyan-400 mb-3">Core Philosophy</h3>
+                         <p class="text-gray-400">Clean code, intuitive design, and a user-first approach.</p>
+                    </div>
+                    <div class="bento-item col-span-3 text-left animate-on-scroll" style="transition-delay: 0.6s;">
+                        <h3 class="text-xl font-bold text-cyan-400 mb-4">My Tech Arsenal</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">React & Next.js</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">Node.js & Express</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">Tailwind CSS</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">Python</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">PostgreSQL</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">Docker</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">HTML</span>
+                            <span class="skill-tag bg-gray-800 border border-gray-700 py-2 px-4 rounded-lg">Java</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resume Section -->
+        <section id="resume" class="section">
+            <div class="container mx-auto max-w-5xl text-center">
+                <h2 class="text-5xl font-extrabold mb-12 animate-on-scroll">My Journey</h2>
+                <div class="timeline-container">
+                    <div class="timeline-item left animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Product Developer</h3>
+                            <p class="text-gray-400 text-sm mb-2">Salesforce | 2024 - Present</p>
+                            <p class="text-gray-300">Leading the development and customization of a cloud-based CRM platform using Salesforce. Responsible for CRM architecture design, workflow automation, data integration, conducting code reviews, and mentoring junior developers.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item right animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Backend Developer</h3>
+                            <p class="text-gray-400 text-sm mb-2">Apple | 2025</p>
+                            <p class="text-gray-300">Developed and maintained RESTful APIs and microservices using Node.js and Express, resulting in a 30% increase in system performance.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item left animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Bachelor of Science in Computer Science</h3>
+                            <p class="text-gray-400 text-sm mb-2">Presidency University | 2022 - 2026</p>
+                            <p class="text-gray-300">Graduated with honors. Focused on algorithms, data structures, and artificial intelligence. President of the university coding club.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+         <!-- Career Section -->
+        <section id="Career" class="section">
+            <div class="container mx-auto max-w-5xl text-center">
+                <h2 class="text-5xl font-extrabold mb-12 animate-on-scroll">My Career</h2>
+                <div class="timeline-container">
+                    <div class="timeline-item left animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Pragya E-Cell Core Member</h3>
+                            <p class="text-gray-400 text-sm mb-2">Presidency University | 2024 - Present</p>
+                            <p class="text-gray-300">Core Member of Marketing & Media at Pragya E-Cell, leading digital campaigns and managing inauguration & commemoration ceremonies to boost outreach and engagement.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item right animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Build Club Member</h3>
+                            <p class="text-gray-400 text-sm mb-2">Presidency University | 2025</p>
+                            <h5 class="text-xl font-bold text-cyan-400">Best Innovator Award</h5>
+                            <p class="text-gray-300">Recognized with the Best Innovator Award at Build Club for developing advanced robotics and engineering projects, including humanoid and volleyball robots, drones, and RC cars, demonstrating creativity, technical innovation, and hands-on expertise.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item left animate-on-scroll">
+                        <div class="timeline-content">
+                            <h3 class="text-xl font-bold text-cyan-400">Build Club Member</h3>
+                            <p class="text-gray-400 text-sm mb-2">Presidency University | 2023 - 2024</p>
+                            <p class="text-gray-300">Built and explored innovative projects and machine learning models, gaining hands-on experience in design, development, and continuous learning of emerging technologies.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="section">
+            <div class="container mx-auto max-w-6xl text-center">
+                <h2 class="text-5xl font-extrabold mb-10 animate-on-scroll">Featured Projects</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Project Card 1 -->
+                    <div class="project-card text-left p-6 rounded-2xl animate-on-scroll" style="transition-delay: 0.2s;">
+                        <img src="https://placehold.co/600x400/000000/06b6d4?text=E-Commerce" alt="E-commerce Platform" class="rounded-md mb-4 w-full h-48 object-cover">
+                        <h3 class="text-2xl font-bold mb-3">Travel Booking Website</h3>
+                        <p class="text-gray-400 mb-4">A full-stack travel booking website built with the MERN stack, featuring destination search, user authentication, and a payment gateway.</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">React</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">Node.js</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">MongoDB</span>
+                        </div>
+                        <a href="#" class="text-cyan-400 hover:underline font-semibold">View Project &rarr;</a>
+                    </div>
+                    <!-- Project Card 2 -->
+                    <div class="project-card text-left p-6 rounded-2xl animate-on-scroll" style="transition-delay: 0.4s;">
+                        <img src="https://placehold.co/600x400/000000/06b6d4?text=Raag+AI" alt="Raag AI" class="rounded-md mb-4 w-full h-48 object-cover">
+                        <h3 class="text-2xl font-bold mb-3">Raag AI</h3>
+                        <p class="text-gray-400 mb-4">Developed Raag AI, an intelligent music analysis application that identifies and classifies Indian classical raagas using AI/ML. Implemented audio feature extraction, pattern recognition, and a recommendation engine to provide real-time raaga identification and personalized insights for musicians and learners.</p>
+                         <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">React</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">TypeScript.js</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">WebSockets</span>
+                        </div>
+                        <a href="#" class="text-cyan-400 hover:underline font-semibold">View Project &rarr;</a>
+                    </div>
+                    <!-- Project Card 3 -->
+                    <div class="project-card text-left p-6 rounded-2xl animate-on-scroll" style="transition-delay: 0.6s;">
+                        <img src="https://placehold.co/600x400/000000/06b6d4?text=GenPharmOS" alt="GenPharmOS" class="rounded-md mb-4 w-full h-48 object-cover">
+                        <h3 class="text-2xl font-bold mb-3">GenPharmOS</h3>
+                        <p class="text-gray-400 mb-4">Designed GenPharmOS, an AI-driven drug discovery platform leveraging generative chemistry, agentic AI workflows, and modular orchestration to accelerate early-stage research and reduce R&D timelines.</p>
+                         <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">React Native</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">Firebase</span>
+                        </div>
+                        <a href="#" class="text-cyan-400 hover:underline font-semibold">View Project &rarr;</a>
+                    </div>
+                     <!-- Project Card 4 -->
+                    <div class="project-card text-left p-6 rounded-2xl animate-on-scroll" style="transition-delay: 0.2s;">
+                        <img src="https://placehold.co/600x400/000000/06b6d4?text=Saarthi+AI" alt="Saarthi AI" class="rounded-md mb-4 w-full h-48 object-cover">
+                        <h3 class="text-2xl font-bold mb-3">Saarthi AI</h3>
+                        <p class="text-gray-400 mb-4">Built a GeoProcessing application leveraging Python, GIS libraries, and cloud services to analyze spatial data, visualize geospatial patterns, and automate location-based insights for real-time decision-making.</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">React</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">Node.js</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">TypeScript</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">Firebase</span>
+                        </div>
+                        <a href="#" class="text-cyan-400 hover:underline font-semibold">View Project &rarr;</a>
+                    </div>
+                     <!-- Project Card 5 -->
+                    <div class="project-card text-left p-6 rounded-2xl animate-on-scroll" style="transition-delay: 0.4s;">
+                        <img src="https://placehold.co/600x400/000000/06b6d4?text=Lexora+AI" alt="Lexora AI" class="rounded-md mb-4 w-full h-48 object-cover">
+                        <h3 class="text-2xl font-bold mb-3">Lexora AI</h3>
+                        <p class="text-gray-400 mb-4">Developed Lexora AI, a full-stack platform for intelligent property dealing and legal assistance, featuring automated document analysis, property search, contract validation, and AI-driven legal insights for buyers and sellers.</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">React</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">Node.js</span>
+                            <span class="text-xs bg-cyan-900 text-cyan-300 py-1 px-2 rounded-full">MongoDB</span>
+                        </div>
+                        <a href="#" class="text-cyan-400 hover:underline font-semibold">View Project &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section">
+            <div class="container mx-auto max-w-4xl text-center">
+                <h2 class="text-5xl font-extrabold mb-12 animate-on-scroll">Let's Connect</h2>
+                <div class="bg-gray-900 bg-opacity-50 backdrop-blur-md border border-gray-700 rounded-2xl p-8 md:p-12 animate-on-scroll" style="transition-delay: 0.2s;">
+                    <div class="grid md:grid-cols-2 gap-12 text-left">
+                        <div>
+                            <h3 class="text-3xl font-bold text-cyan-400 mb-4">Get in Touch</h3>
+                            <p class="text-gray-300 text-lg leading-relaxed mb-8">
+                                I'm currently open to new opportunities and collaborations. Whether you have a project in mind, a question, or just want to say hello, my inbox is always open.
+                            </p>
+                            <div class="space-y-4">
+                                <a href="mailto:sd4win@example.com" class="flex items-center gap-4 text-gray-300 hover:text-cyan-400 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    <span>sd4win@example.com</span>
+                                </a>
+                            </div>
+                        </div>
+                        <form class="w-full">
+                            <div class="flex flex-col gap-4">
+                                <input type="text" placeholder="Your Name" class="bg-gray-800 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all">
+                                <input type="email" placeholder="Your Email" class="bg-gray-800 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all">
+                                <textarea placeholder="Your Message" rows="5" class="bg-gray-800 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"></textarea>
+                                <button type="submit" class="bg-cyan-500 text-black font-bold py-3 px-8 rounded-lg hover:bg-cyan-400 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/30">
+                                    Send Message
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="text-center py-8">
+            <p class="text-gray-500">&copy; 2025 Sayan Das. All Rights Reserved.</p>
+        </footer>
+
+    </div>
+
+    <!-- Custom scripts -->
+    <script>
+        try {
+            // --- THREE.JS 3D PARTICLE BACKGROUND SCRIPT ---
+            const canvas = document.getElementById('bg-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // --- Particle Creation ---
+            const particleCount = 5000;
+            const positions = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 10; // Spread particles in a 10x10x10 cube
+            }
+            const particlesGeometry = new THREE.BufferGeometry();
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const particlesMaterial = new THREE.PointsMaterial({
+                color: 0xffffff, // White color
+                size: 0.02,
+                transparent: true,
+                blending: THREE.AdditiveBlending
+            });
+            const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particleSystem);
+
+            camera.position.z = 5;
+
+            // --- Mouse Tracking ---
+            let mouseX = 0;
+            let mouseY = 0;
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            // --- Animation Loop ---
+            const clock = new THREE.Clock();
+            const animate = () => {
+                const elapsedTime = clock.getElapsedTime();
+
+                // Animate particles
+                particleSystem.rotation.y = elapsedTime * 0.1;
+                
+                // Move camera based on mouse position for a parallax effect
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (mouseY - camera.position.y) * 0.05;
+
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            };
+            animate();
+
+            // --- Handle Window Resize ---
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            });
+        } catch (error) {
+            console.error("Three.js background failed to load:", error);
+        }
+
+
+        try {
+            // --- OTHER PAGE SCRIPTS ---
+            // Typing effect initialization
+            new Typed('#typing-effect', { strings: ['Creative Software Developer', 'Full-Stack Engineer', 'Problem Solver'], typeSpeed: 50, backSpeed: 25, loop: true, smartBackspace: true });
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // Reveal sections on scroll
+            const animatedElements = document.querySelectorAll('.animate-on-scroll');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target); // Animate only once
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedElements.forEach(el => { observer.observe(el); });
+
+        } catch (error)
+        {
+            console.error("Page scripts failed to load:", error);
+        }
+    </script>
+
+</body>
+</html>
