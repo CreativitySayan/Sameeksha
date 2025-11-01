@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PartTimeJobsNearMe</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Typed.js for typing animation -->
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+    <!-- Three.js for 3D particle background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide-static@latest/dist/lucide.js"></script>
+
+    <style>
+        /* Custom styles */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden; /* Prevents horizontal scroll */
+        }
+
+        /* Canvas for three.js background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* iOS-style Navigation Dock */
+        .ios-dock {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* For Safari */
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* Space between buttons */
+            z-index: 50;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .ios-dock button {
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            color: #d1d5db; /* gray-300 */
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem; /* text-sm */
+        }
+
+        .ios-dock button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        
+        .ios-dock button.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Base style for all view sections */
+        .view-section {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center;
+            padding: 8rem 2rem 4rem 2rem; /* More padding top for nav */
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        .view-section.active {
+            display: flex; /* Show active section */
+        }
+
+        /* Style for the typing cursor */
+        .typed-cursor {
+            color: #06b6d4; /* cyan-500 */
+            font-size: 2.5rem;
+        }
+
+        /* Main Glass Card Style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 1.5rem 2rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* Input Field Style */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 0.75rem 1rem;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .glass-input::placeholder {
+            color: #9ca3af; /* gray-400 */
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #06b6d4; /* cyan-500 */
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.5);
+        }
+
+        /* Primary Button Style */
+        .btn-primary {
+            background-color: #06b6d4; /* cyan-500 */
+            color: #000000;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            transition: all 0.3s ease;
+            transform: perspective(1px) scale(1); /* Fix for blurry text on transform */
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: #22d3ee; /* cyan-400 */
+            transform: scale(1.03);
+        }
+        
+        /* Secondary Button (Save/Apply) */
+        .btn-secondary {
+            background-color: rgba(6, 182, 212, 0.1);
+            color: #22d3ee; /* cyan-400 */
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(6, 182, 212, 0.2);
+            color: #67e8f9; /* cyan-300 */
+        }
+        
+        /* Danger Button (Unsave/Withdraw) */
+        .btn-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #f87171; /* red-400 */
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fca5a5; /* red-300 */
+        }
+        
+        /* Job Card Style */
+        .job-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .job-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+        }
+        .job-card .lucide {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+            color: #9ca3af; /* gray-400 */
+        }
+        
+        /* Modal Styles */
+        #message-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #message-modal.show {
+            display: flex;
+        }
+
+        /* Language Picker Style */
+        #lang-picker {
+            background: rgba(31, 41, 55, 0.7); /* gray-800 */
+            color: white;
+            border: 1px solid #374151; /* gray-700 */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 0.5rem;
+            font-size: 0.875rem; /* text-sm */
+            margin-left: 0.5rem;
+        }
+        #lang-picker:focus {
+            outline: none;
+            border-color: #06b6d4; /* cyan-500 */
+        }
+
+        /* Error message on main page */
+        #main-error-card {
+            display: none; /* Hidden by default */
+            max-width: 800px;
+            padding: 2rem; 
+        }
+        #main-error-card h3 {
+            font-size: 2.25rem; /* text-4xl */
+            line-height: 2.5rem;
+        }
+         #main-error-card p, #main-error-card li {
+            font-size: 1.125rem; /* text-lg */
+            line-height: 1.75rem;
+         }
+        #main-error-card code {
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            color: #f87171; /* red-400 */
+            font-size: 1rem;
+        }
+        #main-error-card ol {
+            list-style: decimal;
+            margin-left: 1.5rem;
+            text-align: left;
+        }
+
+        /* ----- CHAT WIDGET STYLES ----- */
+        #chat-bubble {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 4rem;
+            height: 4rem;
+            background-color: #06b6d4; /* cyan-500 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s ease;
+            z-index: 90;
+        }
+        #chat-bubble:hover {
+            transform: scale(1.1);
+            background-color: #22d3ee; /* cyan-400 */
+        }
+        #chat-widget {
+            position: fixed;
+            bottom: 7rem;
+            right: 2rem;
+            width: 350px;
+            max-width: calc(100% - 4rem);
+            height: 450px;
+            z-index: 90;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+        }
+        #chat-widget.show {
+            display: flex;
+        }
+        #chat-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .chat-message {
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .chat-message-user {
+            background-color: #06b6d4; /* cyan-500 */
+            color: #000;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .chat-message-bot {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+        #chat-form {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        #chat-input {
+            flex-grow: 1;
+        }
+
+    </style>
+</head>
+<body class="bg-black">
+
+    <!-- Canvas for 3D background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Main Content Wrapper -->
+    <div class="relative z-10">
+
+        <!-- iOS Style Navigation Dock -->
+        <nav class="ios-dock" id="main-nav">
+            <button data-view="student" class="active" data-lang-key="nav_find_jobs">Find Jobs</button>
+            <button data-view="saved" data-lang-key="nav_saved_jobs">My Saved Jobs</button>
+            <button data-view="applications" data-lang-key="nav_applications">My Applications</button>
+            <button data-view="business" data-lang-key="nav_for_businesses">For Businesses</button>
+            <select id="lang-picker">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="hi">हिन्दी</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="ta">தமிழ்</option>
+            </select>
+        </nav>
+
+        <!-- 
+        ==========================================
+        STUDENT VIEW (FIND JOBS)
+        ==========================================
+        -->
+        <section id="student-view" class="view-section active text-center">
+            <h1 class="text-6xl md:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-400 to-cyan-500">
+                PartTimeJobsNearMe
+            </h1>
+            <p class="text-2xl md:text-3xl text-gray-300 mb-8"><span id="typing-effect"></span></p>
+            
+            <!-- Search Bar -->
+            <div class="w-full max-w-4xl glass-card p-6 mb-12">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" id="search-role" placeholder="Job role (e.g., 'Barista', 'Tutor')" class="glass-input md:col-span-2" data-lang-key="placeholder_job_role">
+                    <input type="text" id="search-location" placeholder="Location (e.g., 'Downtown')" class="glass-input" data-lang-key="placeholder_location">
+                </div>
+                <button id="search-button" class="btn-primary mt-6 w-full md:w-auto" data-lang-key="search_jobs_btn">Search Jobs</button>
+            </div>
+
+            <!-- Main Error Card (for permissions errors) -->
+            <div id="main-error-card" class="glass-card w-full text-left mb-12 border-2 border-red-500">
+                <h3 id="main-error-title" class="text-3xl font-bold mb-4 text-red-400">Error: Could Not Load Jobs</h3>
+                <p id="main-error-message" class="text-gray-200 mb-4">
+                    There was a problem connecting to the database. This is usually due to a **Firebase configuration issue**.
+                </p>
+                <p id="main-error-details" class="text-gray-300"></p>
+            </div>
+
+            <!-- Job Listings -->
+            <div class="w-full max-w-4xl">
+                <h2 class="text-3xl font-bold mb-6 text-left" data-lang-key="recent_jobs_title">Recent Job Postings</h2>
+                <div id="job-listings-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Job cards will be injected here by JavaScript -->
+                    <p id="no-jobs-message" class="text-gray-400 md:col-span-2 text-center" data-lang-key="loading_jobs_msg">Loading jobs...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+        ==========================================
+        SAVED JOBS VIEW
+        ==========================================
+        -->
+        <section id="saved-view" class="view-section">
+            <div class="container mx-auto max-w-4xl text-center w-full">
+                <h2 class="text-5xl font-extrabold mb-12" data-lang-key="saved_jobs_title">My Saved Jobs</h2>
+                <p id="saved-jobs-error" class="text-red-400 text-lg mb-4"></p>
+                <div id="saved-jobs-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Saved job cards will be injected here -->
+                    <p id="no-saved-jobs-message" class="text-gray-400 md:col-span-2 text-center" data-lang-key="no_saved_jobs_msg">You haven't saved any jobs yet.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 
+        ==========================================
+        APPLICATIONS VIEW
+        ==========================================
+        -->
+        <section id="applications-view" class="view-section">
+            <div class="container mx-auto max-w-4xl text-center w-full">
+                <h2 class="text-5xl font-extrabold mb-12" data-lang-key="applications_title">My Applications</h2>
+                <p id="applications-error" class="text-red-400 text-lg mb-4"></p>
+                <div id="applications-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Applied job cards will be injected here -->
+                    <p id="no-applications-message" class="text-gray-400 md:col-span-2 text-center" data-lang-key="no_applications_msg">You haven't applied to any jobs yet.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 
+        ==========================================
+        BUSINESS VIEW
+        ==========================================
+        -->
+        <section id="business-view" class="view-section">
+            <div class="container mx-auto max-w-4xl text-center w-full">
+                <h2 class="text-5xl font-extrabold mb-12" data-lang-key="for_businesses_title">For Businesses</h2>
+                
+                <!-- Post Job Form -->
+                <div class="glass-card w-full text-left mb-12">
+                    <h3 class="text-3xl font-bold mb-6 text-cyan-400" data-lang-key="post_job_title">Post a New Job</h3>
+                    <form id="post-job-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label for="job-title" class="block text-sm font-medium text-gray-300 mb-2" data-lang-key="label_job_title">Job Title</label>
+                            <input type="text" id="job-title" class="glass-input w-full" placeholder="e.g., Coffee Shop Barista" required data-lang-key="placeholder_job_title_ex">
+                        </div>
+                        <div>
+                            <label for="company-name" class="block text-sm font-medium text-gray-300 mb-2" data-lang-key="label_company_name">Company Name</label>
+                            <input type="text" id="company-name" class="glass-input w-full" placeholder="e.g., The Daily Grind" required data-lang-key="placeholder_company_name_ex">
+                        </div>
+                        <div>
+                            <label for="job-location" class="block text-sm font-medium text-gray-300 mb-2" data-lang-key="label_location">Location</label>
+                            <input type="text" id="job-location" class="glass-input w-full" placeholder="e.g., 123 Main St, Downtown" required data-lang-key="placeholder_location_ex">
+                        </div>
+                        <div>
+                            <label for="job-salary" class="block text-sm font-medium text-gray-300 mb-2" data-lang-key="label_salary">Salary (per hour)</label>
+                            <input type="text" id="job-salary" class="glass-input w-full" placeholder="e.g., $18.50" required data-lang-key="placeholder_salary_ex">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="job-description" class="block text-sm font-medium text-gray-300 mb-2" data-lang-key="label_job_description">Job Description</LabeL>
+                            <textarea id="job-description" rows="4" class="glass-input w-full" placeholder="e.g., Responsibilities include making coffee, customer service..." required data-lang-key="placeholder_job_description_ex"></textarea>
+                        </div>
+                        <div class="md:col-span-2 text-right">
+                            <button type="submit" class="btn-primary" data-lang-key="post_job_btn">Post Job Listing</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- My Postings -->
+                <div class="w-full text-left">
+                    <h3 class="text-3xl font-bold mb-6" data-lang-key="your_postings_title">Your Job Postings</h3>
+                    <p id="business-jobs-error" class="text-red-400 text-lg mb-4"></p>
+                    <div id="business-jobs-container" class="grid grid-cols-1 md:col-span-2 gap-6">
+                        <!-- Business's job cards will be injected here -->
+                        <p id="no-business-jobs-message" class="text-gray-400 md:col-span-2 text-center" data-lang-key="no_postings_msg">You haven't posted any jobs yet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="text-center py-8 relative z-10">
+            <p class="text-gray-500">&copy; 2025 PartTimeJobsNearMe. All Rights Reserved.</p>
+        </footer>
+
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal">
+        <div class="glass-card max-w-sm w-full text-center">
+            <h3 id="modal-title" class="text-2xl font-bold text-cyan-400 mb-4">Success!</h3>
+            <p id="modal-message" class="text-gray-200 mb-6">Your job has been posted.</p>
+            <button id="modal-close-btn" class="btn-primary" data-lang-key="modal_close_btn">Got it</button>
+        </div>
+    </div>
+
+    <!-- ----- CHAT WIDGET ----- -->
+    <div id="chat-bubble">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-more">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+            <path d="M8 12h.01"/>
+            <path d="M12 12h.01"/>
+            <path d="M16 12h.01"/>
+        </svg>
+    </div>
+    <div id="chat-widget" class="glass-card !p-0">
+        <!-- Chat Header -->
+        <div id="chat-header" class="flex justify-between items-center p-4">
+            <h3 class="text-lg font-bold text-cyan-400">Support Chat</h3>
+            <button id="chat-close-btn" class="text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Chat Messages -->
+        <div id="chat-messages">
+            <div class="chat-message chat-message-bot">
+                Hello! How can I help you with your queries today?
+            </div>
+        </div>
+        <!-- Chat Input -->
+        <form id="chat-form">
+            <input type="text" id="chat-input" class="glass-input" placeholder="Type your message..." autocomplete="off">
+            <button type="submit" class="btn-primary !p-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send">
+                    <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            addDoc, 
+            setDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot, 
+            collection, 
+            query, 
+            where, 
+            Timestamp,
+            setLogLevel
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Global Variables ---
+        let app, auth, db;
+        let userId = null; // Will be set on auth state change
+        let currentLang = 'en'; // Default language
+        
+        // This will be set by our config
+        let appId = 'default-app-id';
+
+        // Local cache for user's jobs to avoid re-rendering issues
+        let userSavedJobs = new Set();
+        let userApplications = new Set();
+        let allJobsCache = []; // Local cache for all jobs for filtering
+
+        // Firestore Collection Paths
+        // We set these *after* auth is ready and we have the appId
+        let jobsCollectionPath = '';
+        let savedJobsCollectionPath = '';
+        let applicationsCollectionPath = '';
+        let businessJobsQuery = null;
+        
+        // --- Firestore Listeners ---
+        // We define them here so we can detach them on logout
+        let allJobsUnsubscribe = null;
+        let savedJobsUnsubscribe = null;
+        let applicationsUnsubscribe = null;
+        let businessJobsUnsubscribe = null;
+
+        // --- UI Elements ---
+        const views = document.querySelectorAll('.view-section');
+        const navButtons = document.querySelectorAll('#main-nav button');
+        const jobListingsContainer = document.getElementById('job-listings-container');
+        const noJobsMessage = document.getElementById('no-jobs-message');
+        const savedJobsContainer = document.getElementById('saved-jobs-container');
+        const noSavedJobsMessage = document.getElementById('no-saved-jobs-message');
+        const applicationsContainer = document.getElementById('applications-container');
+        const noApplicationsMessage = document.getElementById('no-applications-message');
+        const businessJobsContainer = document.getElementById('business-jobs-container');
+        const noBusinessJobsMessage = document.getElementById('no-business-jobs-message');
+        
+        const postJobForm = document.getElementById('post-job-form');
+        const searchButton = document.getElementById('search-button');
+        
+        // Modal Elements
+        const modal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Lang Picker
+        const langPicker = document.getElementById('lang-picker');
+        
+        // Error Card Elements
+        const mainErrorCard = document.getElementById('main-error-card');
+        const mainErrorTitle = document.getElementById('main-error-title');
+        const mainErrorMessage = document.getElementById('main-error-message');
+        const mainErrorDetails = document.getElementById('main-error-details');
+        const savedJobsError = document.getElementById('saved-jobs-error');
+        const applicationsError = document.getElementById('applications-error');
+        const businessJobsError = document.getElementById('business-jobs-error');
+
+        // --- CHAT WIDGET ELEMENTS ---
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWidget = document.getElementById('chat-widget');
+        const chatCloseBtn = document.getElementById('chat-close-btn');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // --- Multi-Language Translations ---
+        const translations = {
+            en: {
+                nav_find_jobs: "Find Jobs",
+                nav_saved_jobs: "My Saved Jobs",
+                nav_applications: "My Applications",
+                nav_for_businesses: "For Businesses",
+                placeholder_job_role: "Job role (e.g., 'Barista', 'Tutor')",
+                placeholder_location: "Location (e.g., 'Downtown')",
+                search_jobs_btn: "Search Jobs",
+                recent_jobs_title: "Recent Job Postings",
+                loading_jobs_msg: "Loading jobs...",
+                no_jobs_msg: "No jobs found. (Note: Check Firestore Rules if this is unexpected)",
+                saved_jobs_title: "My Saved Jobs",
+                no_saved_jobs_msg: "You haven't saved any jobs yet.",
+                applications_title: "My Applications",
+                no_applications_msg: "You haven't applied to any jobs yet.",
+                for_businesses_title: "For Businesses",
+                post_job_title: "Post a New Job",
+                label_job_title: "Job Title",
+                placeholder_job_title_ex: "e.g., Coffee Shop Barista",
+                label_company_name: "Company Name",
+                placeholder_company_name_ex: "e.g., The Daily Grind",
+                label_location: "Location",
+                placeholder_location_ex: "e.g., 123 Main St, Downtown",
+                label_salary: "Salary (per hour)",
+                placeholder_salary_ex: "e.g., $18.50",
+                label_job_description: "Job Description",
+                placeholder_job_description_ex: "e.g., Responsibilities include making coffee, customer service...",
+                post_job_btn: "Post Job Listing",
+                your_postings_title: "Your Job Postings",
+                no_postings_msg: "You haven't posted any jobs yet.",
+                modal_close_btn: "Got it",
+                modal_success_title: "Success!",
+                modal_error_title: "Error",
+                modal_job_posted_msg: "Your job has been posted.",
+                modal_job_saved_msg: "Job has been saved.",
+                modal_job_applied_msg: "You have successfully applied.",
+                modal_job_unsaved_msg: "The job has been removed from your saved list.",
+                modal_app_withdrawn_msg: "Your application has been withdrawn.",
+                modal_post_job_auth_error: "You must be signed in to post a job.",
+                modal_post_job_error: "Could not post job. Please try again.",
+                card_save: "Save",
+                card_apply: "Apply Now",
+                card_unsave: "Unsave",
+                card_withdraw: "Withdraw Application",
+                card_posting: "This is one of your postings.",
+                error_permissions_title: "Error: Missing or Insufficient Permissions",
+                error_permissions_body: "The code is working, but your **Firebase Security Rules** are blocking it. This is a configuration error in your Firebase Console, **not a code bug**.",
+                error_permissions_fix: "To fix this, go to your Firebase Console > Firestore Database > Rules and **REPLACE** the existing rules with the following:",
+                error_permissions_rule: `
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.businessOwnerId;
+    }
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}`,
+                modal_error_permissions_title: "Configuration Error",
+                modal_error_permissions_body: "The app is blocked by your Firebase Security Rules. You must update your rules in the Firebase Console to allow the app to read data. Please follow the instructions in the red error box on the main page.",
+            },
+            es: {
+                nav_find_jobs: "Buscar Trabajos",
+                nav_saved_jobs: "Mis Trabajos",
+                nav_applications: "Mis Solicitudes",
+                nav_for_businesses: "Para Empresas",
+                placeholder_job_role: "Puesto (ej., 'Barista', 'Tutor')",
+                placeholder_location: "Ubicación (ej., 'Centro')",
+                search_jobs_btn: "Buscar Trabajos",
+                recent_jobs_title: "Publicaciones Recientes",
+                loading_jobs_msg: "Cargando trabajos...",
+                no_jobs_msg: "No se encontraron trabajos. (Nota: Verifique las reglas de Firestore si esto es inesperado)",
+                saved_jobs_title: "Mis Trabajos Guardados",
+                no_saved_jobs_msg: "Aún no has guardado ningún trabajo.",
+                applications_title: "Mis Solicitudes",
+                no_applications_msg: "Aún no has aplicado a ningún trabajo.",
+                for_businesses_title: "Para Empresas",
+                post_job_title: "Publicar un Nuevo Trabajo",
+                label_job_title: "Título del Puesto",
+                placeholder_job_title_ex: "ej., Barista de Cafetería",
+                label_company_name: "Nombre de la Empresa",
+                placeholder_company_name_ex: "ej., El Grano Diario",
+                label_location: "Ubicación",
+                placeholder_location_ex: "ej., Calle Principal 123, Centro",
+                label_salary: "Salario (por hora)",
+                placeholder_salary_ex: "ej., $18.50",
+                label_job_description: "Descripción del Puesto",
+                placeholder_job_description_ex: "ej., Responsabilidades incluyen hacer café, servicio al cliente...",
+                post_job_btn: "Publicar Trabajo",
+                your_postings_title: "Tus Publicaciones",
+                no_postings_msg: "Aún no has publicado ningún trabajo.",
+                modal_close_btn: "Entendido",
+                modal_success_title: "¡Éxito!",
+                modal_error_title: "Error",
+                modal_job_posted_msg: "Tu trabajo ha sido publicado.",
+                modal_job_saved_msg: "El trabajo ha sido guardado.",
+                modal_job_applied_msg: "Has aplicado exitosamente.",
+                modal_job_unsaved_msg: "El trabajo ha sido eliminado de tu lista.",
+                modal_app_withdrawn_msg: "Tu solicitud ha sido retirada.",
+                modal_post_job_auth_error: "Debes iniciar sesión para publicar un trabajo.",
+                modal_post_job_error: "No se pudo publicar el trabajo. Inténtalo de nuevo.",
+                card_save: "Guardar",
+                card_apply: "Aplicar Ahora",
+                card_unsave: "No Guardar",
+                card_withdraw: "Retirar Solicitud",
+                card_posting: "Esta es una de tus publicaciones.",
+                error_permissions_title: "Error: Permisos Faltantes o Insuficientes",
+                error_permissions_body: "El código funciona, pero sus **Reglas de seguridad de Firebase** lo están bloqueando. Este es un error de configuración en su Consola de Firebase, **no un error de código**.",
+                error_permissions_fix: "Para solucionarlo, ve a tu Consola de Firebase > Firestore Database > Reglas y **REEMPLAZA** las reglas existentes con lo siguiente:",
+                error_permissions_rule: `
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.businessOwnerId;
+    }
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}`,
+                modal_error_permissions_title: "Error de Configuración",
+                modal_error_permissions_body: "La aplicación está bloqueada por sus Reglas de Seguridad de Firebase. Debe actualizar sus reglas en la Consola de Firebase para permitir que la aplicación lea datos. Siga las instrucciones en el cuadro de error rojo en la página principal.",
+            },
+            hi: {
+                nav_find_jobs: "नौकरियां ढूंढें",
+                nav_saved_jobs: "मेरी नौकरियां",
+                nav_applications: "मेरे आवेदन",
+                nav_for_businesses: "व्यवसायों के लिए",
+                placeholder_job_role: "नौकरी की भूमिका (जैसे, 'बरिस्ता', 'ट्यूटर')",
+                placeholder_location: "स्थान (जैसे, 'डाउनटाउन')",
+                search_jobs_btn: "नौकरियां खोजें",
+                recent_jobs_title: "हाल की नौकरियां",
+                loading_jobs_msg: "नौकरियां लोड हो रही हैं...",
+                no_jobs_msg: "कोई नौकरी नहीं मिली। (नोट: यदि यह अप्रत्याशित है तो फायरस्टोर नियमों की जाँच करें)",
+                saved_jobs_title: "मेरी सहेजी गई नौकरियां",
+                no_saved_jobs_msg: "आपने अभी तक कोई नौकरी नहीं सहेजी है।",
+                applications_title: "मेरे आवेदन",
+                no_applications_msg: "आपने अभी तक किसी नौकरी के लिए आवेदन नहीं किया है।",
+                for_businesses_title: "व्यवसायों के लिए",
+                post_job_title: "एक नई नौकरी पोस्ट करें",
+                label_job_title: "नौकरी का शीर्षक",
+                placeholder_job_title_ex: "जैसे, कॉफी शॉप बरिस्ता",
+                label_company_name: "कंपनी का नाम",
+                placeholder_company_name_ex: "जैसे, द डेली ग्राइंड",
+                label_location: "स्थान",
+                placeholder_location_ex: "जैसे, 123 मेन स्ट्रीट, डाउनटाउन",
+                label_salary: "वेतन (प्रति घंटा)",
+                placeholder_salary_ex: "जैसे, $18.50",
+                label_job_description: "नौकरी का विवरण",
+                placeholder_job_description_ex: "जैसे, जिम्मेदारियों में कॉफी बनाना, ग्राहक सेवा शामिल है...",
+                post_job_btn: "नौकरी पोस्ट करें",
+                your_postings_title: "आपकी नौकरियां",
+                no_postings_msg: "आपने अभी तक कोई नौकरी पोस्ट नहीं की है।",
+                modal_close_btn: "समझ गया",
+                modal_success_title: "सफलता!",
+                modal_error_title: "त्रुटि",
+                modal_job_posted_msg: "आपकी नौकरी पोस्ट कर दी गई है।",
+                modal_job_saved_msg: "नौकरी सहेज ली गई है।",
+                modal_job_applied_msg: "आपने सफलतापूर्वक आवेदन कर दिया है।",
+                modal_job_unsaved_msg: "नौकरी को आपकी सहेजी गई सूची से हटा दिया गया है।",
+                modal_app_withdrawn_msg: "आपका आवेदन वापस ले लिया गया है।",
+                modal_post_job_auth_error: "नौकरी पोस्ट करने के लिए आपको साइन इन होना चाहिए।",
+                modal_post_job_error: "नौकरी पोस्ट नहीं की जा सकी। कृपया पुन: प्रयास करें।",
+                card_save: "सहेजें",
+                card_apply: "अभी आवेदन करें",
+                card_unsave: "न सहेजें",
+                card_withdraw: "आवेदन वापस लें",
+                card_posting: "यह आपकी पोस्टिंग में से एक है।",
+                error_permissions_title: "त्रुटि: अनुमतियाँ गुम या अपर्याप्त हैं",
+                error_permissions_body: "कोड काम कर रहा है, लेकिन आपके **फायरबेस सुरक्षा नियम** इसे अवरुद्ध कर रहे हैं। यह आपके फायरबेस कंसोल में एक कॉन्फ़िगरेशन त्रुटि है, **कोई कोड बग नहीं**।",
+                error_permissions_fix: "इसे ठीक करने के लिए, अपने फायरबेस कंसोल > फायरस्टोर डेटाबेस > नियम पर जाएं और मौजूदा नियमों को निम्नलिखित से **बदलें**:",
+                error_permissions_rule: `
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.businessOwnerId;
+    }
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}`,
+                modal_error_permissions_title: "कॉन्फ़िगरेशन त्रुटि",
+                modal_error_permissions_body: "ऐप आपके फायरबेस सुरक्षा नियमों द्वारा अवरुद्ध है। ऐप को डेटा पढ़ने की अनुमति देने के लिए आपको अपने फायरबेस कंसोल में अपने नियमों को अपडेट करना होगा। कृपया मुख्य पृष्ठ पर लाल त्रुटि बॉक्स में दिए गए निर्देशों का पालन करें।",
+            },
+            kn: {
+                nav_find_jobs: "ಉದ್ಯೋಗ ಹುಡುಕಿ",
+                nav_saved_jobs: "ನನ್ನ ಉದ್ಯೋಗಗಳು",
+                nav_applications: "ನನ್ನ ಅರ್ಜಿಗಳು",
+                nav_for_businesses: "ವ್ಯವಹಾರಗಳಿಗಾಗಿ",
+                placeholder_job_role: "ಉದ್ಯೋಗದ ಪಾತ್ರ (ಉದಾ., 'ಬರಿಸ್ತಾ', 'ಬೋಧಕ')",
+                placeholder_location: "ಸ್ಥಳ (ಉದಾ., 'ಡೌನ್ಟೌನ್')",
+                search_jobs_btn: "ಉದ್ಯೋಗಗಳನ್ನು ಹುಡುಕಿ",
+                recent_jobs_title: "ಇತ್ತೀಚಿನ ಉದ್ಯೋಗಗಳು",
+                loading_jobs_msg: "ಉದ್ಯೋಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
+                no_jobs_msg: "ಯಾವುದೇ ಉದ್ಯೋಗಗಳು ಕಂಡುಬಂದಿಲ್ಲ. (ಗಮನಿಸಿ: ಇದು ಅನಿರೀಕ್ಷಿತವಾಗಿದ್ದರೆ ಫೈರ್‌ಸ್ಟೋರ್ ನಿಯಮಗಳನ್ನು ಪರಿಶೀಲಿಸಿ)",
+                saved_jobs_title: "ನನ್ನ ಉಳಿಸಿದ ಉದ್ಯೋಗಗಳು",
+                no_saved_jobs_msg: "ನೀವು ಇನ್ನೂ ಯಾವುದೇ ಉದ್ಯೋಗಗಳನ್ನು ಉಳಿಸಿಲ್ಲ.",
+                applications_title: "ನನ್ನ ಅರ್ಜಿಗಳು",
+                no_applications_msg: "ನೀವು ಇನ್ನೂ ಯಾವುದೇ ಉದ್ಯೋಗಕ್ಕೆ ಅರ್ಜಿ ಸಲ್ಲಿಸಿಲ್ಲ.",
+                for_businesses_title: "ವ್ಯವಹಾರಗಳಿಗಾಗಿ",
+                post_job_title: "ಹೊಸ ಉದ್ಯೋಗವನ್ನು ಪೋಸ್ಟ್ ಮಾಡಿ",
+                label_job_title: "ಉದ್ಯೋಗದ ಶೀರ್ಷಿಕೆ",
+                placeholder_job_title_ex: "ಉದಾ., ಕಾಫಿ ಶಾಪ್ ಬರಿಸ್ತಾ",
+                label_company_name: "ಕಂಪನಿ ಹೆಸರು",
+                placeholder_company_name_ex: "ಉದಾ., ದಿ ಡೈಲಿ ಗ್ರೈಂಡ್",
+                label_location: "ಸ್ಥಳ",
+                placeholder_location_ex: "ಉದಾ., 123 ಮೇನ್ ಸ್ಟ್ರೀಟ್, ಡೌನ್ಟೌನ್",
+                label_salary: "ಸಂಬಳ (ಪ್ರತಿ ಗಂಟೆಗೆ)",
+                placeholder_salary_ex: "ಉದಾ., $18.50",
+                label_job_description: "ಉದ್ಯೋಗದ ವಿವರಣೆ",
+                placeholder_job_description_ex: "ಉದಾ., ಜವಾಬ್ದಾರಿಗಳು ಕಾಫಿ ತಯಾರಿಸುವುದು, ಗ್ರಾಹಕ ಸೇವೆ...",
+                post_job_btn: "ಉದ್ಯೋಗ ಪೋಸ್ಟ್ ಮಾಡಿ",
+                your_postings_title: "ನಿಮ್ಮ ಉದ್ಯೋಗಗಳು",
+                no_postings_msg: "ನೀವು ಇನ್ನೂ ಯಾವುದೇ ಉದ್ಯೋಗಗಳನ್ನು ಪೋಸ್ಟ್ ಮಾಡಿಲ್ಲ.",
+                modal_close_btn: "ಸರಿ",
+                modal_success_title: "ಯಶಸ್ವಿ!",
+                modal_error_title: "ದೋಷ",
+                modal_job_posted_msg: "ನಿಮ್ಮ ಉದ್ಯೋಗವನ್ನು ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ.",
+                modal_job_saved_msg: "ಉದ್ಯೋಗವನ್ನು ಉಳಿಸಲಾಗಿದೆ.",
+                modal_job_applied_msg: "ನೀವು ಯಶಸ್ವಿಯಾಗಿ ಅರ್ಜಿ ಸಲ್ಲಿಸಿದ್ದೀರಿ.",
+                modal_job_unsaved_msg: "ಉದ್ಯೋಗವನ್ನು ನಿಮ್ಮ ಉಳಿಸಿದ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕಲಾಗಿದೆ.",
+                modal_app_withdrawn_msg: "ನಿಮ್ಮ ಅರ್ಜಿಯನ್ನು ಹಿಂಪಡೆಯಲಾಗಿದೆ.",
+                modal_post_job_auth_error: "ಉದ್ಯೋಗ ಪೋಸ್ಟ್ ಮಾಡಲು ನೀವು ಸೈನ್ ಇನ್ ಆಗಿರಬೇಕು.",
+                modal_post_job_error: "ಉದ್ಯೋಗವನ್ನು ಪೋಸ್ಟ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                card_save: "ಉಳಿಸಿ",
+                card_apply: "ಈಗ ಅನ್ವಯಿಸಿ",
+                card_unsave: "ಉಳಿಸಬೇಡಿ",
+                card_withdraw: "ಅರ್ಜಿ ಹಿಂಪಡೆಯಿರಿ",
+                card_posting: "ಇದು ನಿಮ್ಮ ಪೋಸ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಒಂದಾಗಿದೆ.",
+                error_permissions_title: "ದೋಷ: ಅನುಮತಿಗಳು ಕಾಣೆಯಾಗಿವೆ ಅಥವಾ ಸಾಕಷ್ಟಿಲ್ಲ",
+                error_permissions_body: "ಕೋಡ್ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿದೆ, ಆದರೆ ನಿಮ್ಮ **ಫೈರ್‌ಬೇಸ್ ಭದ್ರತಾ ನಿಯಮಗಳು** ಅದನ್ನು ನಿರ್ಬಂಧಿಸುತ್ತಿವೆ. ಇದು ನಿಮ್ಮ ಫೈರ್‌ಬೇಸ್ ಕನ್ಸೋಲ್‌ನಲ್ಲಿನ ಕಾನ್ಫಿಗರೇಶನ್ ದೋಷವಾಗಿದೆ, **ಕೋಡ್ ಬಗ್ ಅಲ್ಲ**.",
+                error_permissions_fix: "ಇದನ್ನು ಸರಿಪಡಿಸಲು, ನಿಮ್ಮ ಫೈರ್‌ಬೇಸ್ ಕನ್ಸೋಲ್ > ಫೈರ್‌ಸ್ಟೋರ್ ಡೇಟಾಬೇಸ್ > ನಿಯಮಗಳಿಗೆ ಹೋಗಿ ಮತ್ತು ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ನಿಯಮಗಳನ್ನು ಈ ಕೆಳಗಿನವುಗಳೊಂದಿಗೆ **ಬದಲಾಯಿಸಿ**:",
+                error_permissions_rule: `
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.businessOwnerId;
+    }
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}`,
+                modal_error_permissions_title: "ಸಂರಚನಾ ದೋಷ",
+                modal_error_permissions_body: "ಅಪ್ಲಿಕೇಶನ್ ನಿಮ್ಮ ಫೈರ್‌ಬೇಸ್ ಭದ್ರತಾ ನಿಯಮಗಳಿಂದ ನಿರ್ಬಂಧಿಸಲ್ಪಟ್ಟಿದೆ. ಡೇಟಾವನ್ನು ಓದಲು ಅಪ್ಲಿಕೇಶನ್‌ಗೆ ಅನುಮತಿಸಲು ನಿಮ್ಮ ಫೈರ್‌ಬೇಸ್ ಕನ್ಸೋಲ್‌ನಲ್ಲಿ ನಿಮ್ಮ ನಿಯಮಗಳನ್ನು ನೀವು ನವೀಕರಿಸಬೇಕು. ದಯವಿಟ್ಟು ಮುಖ್ಯ ಪುಟದಲ್ಲಿನ ಕೆಂಪು ದೋಷ ಬಾಕ್ಸ್‌ನಲ್ಲಿರುವ ಸೂಚನೆಗಳನ್ನು ಅನುಸರಿಸಿ.",
+            },
+            ta: {
+                nav_find_jobs: "வேலை தேடு",
+                nav_saved_jobs: "என் வேலைகள்",
+                nav_applications: "என் விண்ணப்பங்கள்",
+                nav_for_businesses: "வணிகங்களுக்கு",
+                placeholder_job_role: "வேலைப் பங்கு (எ.கா., 'பриста', 'ஆசிரியர்')",
+                placeholder_location: "இடம் (எ.கா., 'நகர மையம்')",
+                search_jobs_btn: "வேலைகளைத் தேடு",
+                recent_jobs_title: "சமீபத்திய வேலைகள்",
+                loading_jobs_msg: "வேலைகள் ஏற்றப்படுகின்றன...",
+                no_jobs_msg: "வேலைகள் எதுவும் இல்லை. (குறிப்பு: இது எதிர்பாராததாக இருந்தால், Firestore விதிகளைச் சரிபார்க்கவும்)",
+                saved_jobs_title: "நான் சேமித்த வேலைகள்",
+                no_saved_jobs_msg: "நீங்கள் இன்னும் எந்த வேலையையும் சேமிக்கவில்லை.",
+                applications_title: "என் விண்ணப்பங்கள்",
+                no_applications_msg: "நீங்கள் இன்னும் எந்த வேலைக்கும் விண்ணப்பிக்கவில்லை.",
+                for_businesses_title: "வணிகங்களுக்கு",
+                post_job_title: "புதிய வேலையை இடுகையிடவும்",
+                label_job_title: "வேலையின் தலைப்பு",
+                placeholder_job_title_ex: "எ.கா., காபி ஷாப் பரிஸ்டா",
+                label_company_name: "நிறுவனத்தின் பெயர்",
+                placeholder_company_name_ex: "எ.கா., தி டெய்லி கிரைண்ட்",
+                label_location: "இடம்",
+                placeholder_location_ex: "எ.கா., 123 மெயின் ஸ்ட்ரீட், டவுன்டவுன்",
+                label_salary: "சம்பளம் (ஒரு மணி நேரத்திற்கு)",
+                placeholder_salary_ex: "ಎ.கா., $18.50",
+                label_job_description: "வேலை விளக்கம்",
+                placeholder_job_description_ex: "எ.கா., பொறுப்புகளில் காபி தயாரித்தல், வாடிக்கையாளர் சேவை...",
+                post_job_btn: "வேலையை இடுகையிடவும்",
+                your_postings_title: "உங்கள் வேலைகள்",
+                no_postings_msg: "நீங்கள் இன்னும் எந்த வேலையையும் இடவில்லை.",
+                modal_close_btn: "சரி",
+                modal_success_title: "வெற்றி!",
+                modal_error_title: "பிழை",
+                modal_job_posted_msg: "உங்கள் வேலை இடுகையிடப்பட்டது.",
+                modal_job_saved_msg: "வேலை சேமிக்கப்பட்டது.",
+                modal_job_applied_msg: "நீங்கள் வெற்றிகரமாக விண்ணப்பித்துவிட்டீர்கள்.",
+                modal_job_unsaved_msg: "உங்கள் சேமித்த பட்டியலிலிருந்து வேலை அகற்றப்பட்டது.",
+                modal_app_withdrawn_msg: "உங்கள் விண்ணப்பம் திரும்பப் பெறப்பட்டது.",
+                modal_post_job_auth_error: "வேலையை இடுகையிட நீங்கள் உள்நுழைந்திருக்க வேண்டும்.",
+                modal_post_job_error: "வேலையை இடுகையிட முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
+                card_save: "சேமி",
+                card_apply: "இப்போது விண்ணப்பிக்கவும்",
+                card_unsave: "சேமிப்பை நீக்கு",
+                card_withdraw: "விண்ணப்பத்தை திரும்பப் பெறு",
+                card_posting: "இது உங்கள் இடுகைகளில் ஒன்றாகும்.",
+                error_permissions_title: "பிழை: அனுமதிகள் இல்லை அல்லது போதுமானதாக இல்லை",
+                error_permissions_body: "குறியீடு செயல்படுகிறது, ஆனால் உங்கள் **Firebase பாதுகாப்பு விதிகள்** அதைத் தடுக்கின்றன. இது உங்கள் Firebase கன்சோலில் உள்ள கட்டமைப்புப் பிழை, **குறியீடு பிழை அல்ல**.",
+                error_permissions_fix: "இதைச் சரிசெய்ய, உங்கள் Firebase Console > Firestore Database > Rules என்பதற்குச் சென்று, இருக்கும் விதிகளை பின்வருவனவற்றுடன் **மாற்றவும்**:",
+                error_permissions_rule: `
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.businessOwnerId;
+    }
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}`,
+                modal_error_permissions_title: "கட்டமைப்பு பிழை",
+                modal_error_permissions_body: "உங்கள் Firebase பாதுகாப்பு விதிகளால் ஆப்ஸ் தடுக்கப்பட்டது. தரவைப் படிக்க பயன்பாட்டை அனுமதிக்க உங்கள் Firebase கன்சோலில் உங்கள் விதிகளைப் புதுப்பிக்க வேண்டும். பிரதான பக்கத்தில் உள்ள சிவப்பு பிழை பெட்டியில் உள்ள வழிமுறைகளைப் பின்பற்றவும்.",
+            }
+        };
+
+        // --- App Initialization ---
+        function initializeAppLogic() {
+            try {
+                // ======================================================================
+                // HARD-CODED CONFIG: You must fill in these values
+                // ======================================================================
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDQRDNpoA1PjGokPTwO7QSl9BDlPlLOs2k",
+                    authDomain: "parttimejobnearme.firebaseapp.com",
+                    projectId: "parttimejobnearme",
+                    storageBucket: "parttimejobnearme.firebasestorage.app",
+                    messagingSenderId: "595972445813",
+                    appId: "1:595972445813:web:87eafe80c5354f69af4a3c"
+                };
+                
+                // const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                
+                // Log the project ID to help debug which project is being used
+                if (firebaseConfig.projectId) {
+                    appId = firebaseConfig.projectId;
+                    console.log(`Connecting to Firebase project: ${appId}`);
+                } else {
+                    console.warn("Firebase config not found or projectId is missing.");
+                    appId = 'default-app-id'; // Fallback
+                }
+                
+                // Also log the domain for easy copy/pasting into Firebase 'Authorized domains'
+                console.log(`App is running from origin: ${window.location.origin}`);
+                
+                // Check if API key is missing or empty
+                if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_WEB_API_KEY_HERE") { 
+                     throw new Error("CRITICAL: API Key is missing. Please edit index.html (around line 1340) and add your Firebase Web API Key.");
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug'); // Enable detailed Firestore logs
+                
+                setupAuthListener();
+                setupEventListeners();
+                initTypedJs();
+                initThreeJsBackground();
+                setLanguage(currentLang); // Set initial language
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                mainErrorCard.style.display = 'block';
+                mainErrorTitle.textContent = "Firebase Initialization Error";
+                mainErrorMessage.textContent = "Could not connect to Firebase. This is likely because you have not added your Firebase project details to the `index.html` file.";
+                mainErrorDetails.innerHTML = `<code style="color: #fca5a5;">${error.message}</code><br><br>Please follow the instructions in the code comments (around line 1340) to add your project's API key and other configuration values.`;
+            }
+        }
+
+        // --- Authentication ---
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                // This function now just handles the ANONYMOUS user
+                if (user) {
+                    console.log("User is anonymously authenticated:", user.uid);
+                    userId = user.uid;
+                    
+                    // Update all collection paths
+                    jobsCollectionPath = `artifacts/${appId}/public/data/jobs`;
+                    savedJobsCollectionPath = `artifacts/${appId}/users/${userId}/savedJobs`;
+                    applicationsCollectionPath = `artifacts/${appId}/users/${userId}/applications`;
+                    businessJobsQuery = query(collection(db, jobsCollectionPath), where("businessOwnerId", "==", userId));
+
+                    // Start all data listeners
+                    listenForAllJobs();
+                    listenForSavedJobs();
+                    listenForApplications();
+                    listenForBusinessJobs();
+                    
+                    // Show the app
+                    showView('student');
+
+                } else { 
+                    console.log("User is logged out / no user.");
+                    userId = null;
+                    
+                    // Clear any stale data
+                    clearAllJobListeners();
+                    jobListingsContainer.innerHTML = '';
+                    savedJobsContainer.innerHTML = '';
+                    applicationsContainer.innerHTML = '';
+                    businessJobsContainer.innerHTML = '';
+                    allJobsCache = [];
+                    userSavedJobs.clear();
+                    userApplications.clear();
+                }
+            });
+
+            // Perform initial sign-in
+            (async () => {
+                try {
+                    // Force anonymous sign-in, as custom token may be for a different project
+                    console.log("Signing in anonymously...");
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Initial auth error:", error.code, error.message);
+                    mainErrorCard.style.display = 'block';
+                    mainErrorTitle.textContent = "Firebase Auth Error";
+                    mainErrorMessage.textContent = "Could not sign in to Firebase anonymously. This is required to load job data.";
+                    // NEW: Updated error message to be more specific
+                    mainErrorDetails.innerHTML = `<code style="color: #fca5a5;">${error.message}</code><br><br>This is a **Firebase configuration error**. Please check two things in your Firebase Console: <br>1) Go to <strong>Authentication > Sign-in method</strong> and ensure <strong>'Anonymous'</strong> sign-in is enabled. <br>2) Go to <strong>Authentication > Settings > Authorized domains</strong> and ensure this app's domain is added. (Check console for the domain to add).`;
+                }
+            })();
+        }
+
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            // Navigation
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const view = button.dataset.view;
+                    showView(view);
+                });
+            });
+
+            // Job Form/Search
+            postJobForm.addEventListener('submit', handlePostJob);
+            searchButton.addEventListener('click', handleSearch);
+
+            // Modal Close
+            modalCloseBtn.addEventListener('click', () => modal.classList.remove('show'));
+
+            // Language Picker
+            langPicker.addEventListener('change', (e) => setLanguage(e.target.value));
+
+            // --- CHAT WIDGET LISTENERS ---
+            chatBubble.addEventListener('click', () => {
+                chatWidget.classList.toggle('show');
+            });
+            chatCloseBtn.addEventListener('click', () => {
+                chatWidget.classList.remove('show');
+            });
+            chatForm.addEventListener('submit', handleChatMessage);
+
+            // Event delegation for dynamic buttons
+            document.body.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const jobId = target.dataset.id;
+                if (!jobId) return;
+
+                if (target.dataset.action === 'save') {
+                    saveJob(jobId);
+                } else if (target.dataset.action === 'apply') {
+                    applyForJob(jobId);
+                } else if (target.dataset.action === 'unsave') {
+                    unsaveJob(jobId);
+                } else if (target.dataset.action === 'unapply') {
+                    unapplyForJob(jobId);
+                }
+            });
+        }
+
+        // --- View Management ---
+        function showView(viewId) {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById(`${viewId}-view`).classList.add('active');
+            
+            navButtons.forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-view="${viewId}"]`).classList.add('active');
+
+            // NEW: Contextual Navigation
+            const seekerNav = [
+                document.querySelector(`button[data-view="student"]`),
+                document.querySelector(`button[data-view="saved"]`),
+                document.querySelector(`button[data-view="applications"]`)
+            ];
+            const businessNav = document.querySelector(`button[data-view="business"]`);
+
+            if (viewId === 'business') {
+                // If on business view, hide seeker nav
+                seekerNav.forEach(btn => btn.style.display = 'none');
+            } else {
+                // On all other views, show all nav
+                seekerNav.forEach(btn => btn.style.display = 'block');
+                businessNav.style.display = 'block';
+            }
+        }
+
+        // --- Modal ---
+        function showModal(titleKey, messageKey) {
+            // Update modal text based on current language
+            modalTitle.textContent = translations[currentLang][titleKey] || titleKey;
+            modalMessage.textContent = translations[currentLang][messageKey] || messageKey;
+            modal.classList.add('show');
+        }
+
+        // --- CHAT FUNCTIONS ---
+        function handleChatMessage(e) {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message to UI
+            addMessageToChat(message, 'user');
+            chatInput.value = '';
+
+            // Get and add bot response
+            getBotResponse(message);
+        }
+
+        function getBotResponse(message) {
+            const lowerCaseMessage = message.toLowerCase();
+            let botMessage = "";
+
+            if (lowerCaseMessage.includes('email') || lowerCaseMessage.includes('contact') || lowerCaseMessage.includes('help')) {
+                botMessage = "For further assistance, please email us at parttimejobsheree@gmail.com";
+            } else if (lowerCaseMessage.includes('hi') || lowerCaseMessage.includes('hello')) {
+                botMessage = "Hello! How can I help you today?";
+            } else {
+                botMessage = "Thanks for your query! I am a simple bot. For complex questions, please email parttimejobsheree@gmail.com";
+            }
+
+            // Simulate bot thinking
+            setTimeout(() => {
+                addMessageToChat(botMessage, 'bot');
+            }, 1000);
+        }
+
+        function addMessageToChat(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message chat-message-${sender}`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // --- Language Function ---
+        function setLanguage(lang) {
+            if (!translations[lang]) return;
+            currentLang = lang;
+            langPicker.value = lang; // Sync dropdown
+            
+            // Update dynamic appId in translations
+            for (const langKey in translations) {
+                translations[langKey].error_permissions_rule = translations[langKey].error_permissions_rule.replace(/artifacts\/[^/]+/, `artifacts/${appId}`);
+            }
+
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                const translation = translations[lang][key];
+                if (translation) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translation;
+                    } else {
+                        el.textContent = translation;
+                    }
+                }
+            });
+            
+            // Re-translate error messages if they are visible
+            if (mainErrorCard.style.display === 'block') {
+                updatePermissionsErrorUI(jobsCollectionPath);
+            }
+            
+            // Apply language to dynamic content *after* static content is set
+            applyLanguageToDynamicContent();
+        }
+
+        // --- Firestore Data Functions ---
+        
+        // (CREATE) Post a new job
+        async function handlePostJob(e) {
+            e.preventDefault();
+            if (!userId) return showModal("modal_error_title", "modal_post_job_auth_error");
+
+            const job = {
+                title: postJobForm['job-title'].value,
+                company: postJobForm['company-name'].value,
+                location: postJobForm['job-location'].value,
+                salary: postJobForm['job-salary'].value,
+                description: postJobForm['job-description'].value,
+                postedAt: Timestamp.now(),
+                businessOwnerId: userId // Tag the job with the owner's ID
+            };
+
+            try {
+                // Ensure the public path is correct before posting
+                if (!jobsCollectionPath) {
+                    jobsCollectionPath = `artifacts/${appId}/public/data/jobs`;
+                }
+                await addDoc(collection(db, jobsCollectionPath), job);
+                showModal("modal_success_title", "modal_job_posted_msg");
+                postJobForm.reset();
+            } catch (error) {
+                console.error("Error posting job: ", error);
+                showModal("modal_error_title", "modal_post_job_error");
+            }
+        }
+
+        // (READ) Listen for ALL jobs (public)
+        function listenForAllJobs() {
+            // Ensure we have the path
+            if (!jobsCollectionPath) {
+                console.error("jobsCollectionPath is not set. Cannot listen for jobs.");
+                return;
+            }
+            
+            // Clear old listener if it exists
+            if (allJobsUnsubscribe) allJobsUnsubscribe();
+
+            const q = query(collection(db, jobsCollectionPath));
+            allJobsUnsubscribe = onSnapshot(q, (snapshot) => {
+                // Hide error card if successful
+                mainErrorCard.style.display = 'none';
+
+                allJobsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort by newest first
+                allJobsCache.sort((a, b) => b.postedAt.seconds - a.postedAt.seconds);
+                renderJobListings(allJobsCache);
+                
+                // After rendering, apply current language to new cards
+                applyLanguageToDynamicContent();
+            }, (error) => {
+                // This is a configuration error, not a code bug.
+                // The fix is to update Firestore Security Rules in the Firebase Console.
+                
+                console.error("--- THIS IS A FIREBASE CONFIGURATION ERROR ---");
+                console.error("--- YOU MUST FIX THIS IN YOUR FIREBASE CONSOLE, NOT IN THE CODE ---");
+                console.error(`Error: ${error.message}`);
+                console.error(`The app is trying to read from the path: ${jobsCollectionPath}`);
+                console.error("FIX: Go to your Firebase project > Firestore Database > Rules and paste in the rules provided in the red error box on the webpage.");
+                
+                updatePermissionsErrorUI(jobsCollectionPath);
+                // NEW: Show modal popup as well
+                showModal("modal_error_permissions_title", "modal_error_permissions_body");
+            });
+        }
+        
+        // (READ) Listen for user's SAVED jobs (private)
+        function listenForSavedJobs() {
+            if (!savedJobsCollectionPath) return; // Not signed in
+            if (savedJobsUnsubscribe) savedJobsUnsubscribe();
+            
+            const q = query(collection(db, savedJobsCollectionPath));
+            savedJobsUnsubscribe = onSnapshot(q, (snapshot) => {
+                savedJobsError.textContent = ''; // Clear error
+                userSavedJobs.clear();
+                const savedJobs = snapshot.docs.map(doc => {
+                    userSavedJobs.add(doc.id);
+                    return { id: doc.id, ...doc.data() };
+                });
+                renderSavedJobs(savedJobs);
+                renderJobListings(allJobsCache); // Re-render main list to update buttons
+                
+                // After rendering, apply current language to new cards
+                applyLanguageToDynamicContent();
+            }, (error) => {
+                console.error("Error listening for saved jobs:", error);
+                savedJobsError.textContent = `Error: ${error.message}`;
+            });
+        }
+
+        // (READ) Listen for user's APPLICATIONS (private)
+        function listenForApplications() {
+            if (!applicationsCollectionPath) return; // Not signed in
+            if (applicationsUnsubscribe) applicationsUnsubscribe();
+
+            const q = query(collection(db, applicationsCollectionPath));
+            applicationsUnsubscribe = onSnapshot(q, (snapshot) => {
+                applicationsError.textContent = ''; // Clear error
+                userApplications.clear();
+                const applications = snapshot.docs.map(doc => {
+                    userApplications.add(doc.id);
+                    return { id: doc.id, ...doc.data() };
+                });
+                renderApplications(applications);
+                renderJobListings(allJobsCache); // Re-render main list to update buttons
+                
+                // After rendering, apply current language to new cards
+                applyLanguageToDynamicContent();
+            }, (error) => {
+                console.error("Error listening for applications:", error);
+                applicationsError.textContent = `Error: ${error.message}`;
+            });
+        }
+
+        // (READ) Listen for BUSINESS'S jobs (public, but filtered)
+        function listenForBusinessJobs() {
+             // Ensure we have the public path for the query
+            if (!jobsCollectionPath) {
+                 jobsCollectionPath = `artifacts/${appId}/public/data/jobs`;
+            }
+            if (!userId) return; // Not signed in
+            
+            // Rebuild query in case userId/appId changed
+            businessJobsQuery = query(collection(db, jobsCollectionPath), where("businessOwnerId", "==", userId));
+            
+            if (businessJobsUnsubscribe) businessJobsUnsubscribe();
+            
+            businessJobsUnsubscribe = onSnapshot(businessJobsQuery, (snapshot) => {
+                businessJobsError.textContent = ''; // Clear error
+                const businessJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort by newest first
+                businessJobs.sort((a, b) => b.postedAt.seconds - a.postedAt.seconds);
+                renderBusinessJobs(businessJobs);
+                
+                // After rendering, apply current language to new cards
+                applyLanguageToDynamicContent();
+            }, (error) => {
+                console.error("Error listening for business jobs:", error);
+                businessJobsError.textContent = `Error: ${error.message}`;
+                // NEW: Show modal if the main one hasn't been shown yet
+                if (mainErrorCard.style.display !== 'block') {
+                    // updatePermissionsErrorUI(jobsCollectionPath); // Show the main card
+                    // showModal("modal_error_permissions_title", "modal_error_permissions_body");
+                }
+            });
+        }
+        
+        // Function to clear all listeners on logout
+        function clearAllJobListeners() {
+            if (allJobsUnsubscribe) allJobsUnsubscribe();
+            if (savedJobsUnsubscribe) savedJobsUnsubscribe();
+            if (applicationsUnsubscribe) applicationsUnsubscribe();
+            if (businessJobsUnsubscribe) businessJobsUnsubscribe();
+            allJobsUnsubscribe = null;
+            savedJobsUnsubscribe = null;
+            applicationsUnsubscribe = null;
+            businessJobsUnsubscribe = null;
+        }
+
+        // --- Student Actions (Save/Apply) ---
+        async function saveJob(jobId) {
+            if (!userId) return;
+            const jobToSave = allJobsCache.find(job => job.id === jobId);
+            if (!jobToSave) return;
+
+            try {
+                // Use setDoc with the job ID as the document ID to prevent duplicates
+                await setDoc(doc(db, savedJobsCollectionPath, jobId), jobToSave);
+                showModal("modal_success_title", "modal_job_saved_msg");
+            } catch (error) {
+                console.error("Error saving job:", error);
+                showModal("modal_error_title", `Error: ${error.message}`);
+            }
+        }
+
+        async function applyForJob(jobId) {
+            if (!userId) return;
+            const jobToApply = allJobsCache.find(job => job.id === jobId);
+            if (!jobToApply) return;
+
+            try {
+                // Use setDoc with the job ID as the document ID
+                await setDoc(doc(db, applicationsCollectionPath, jobId), jobToApply);
+                showModal("modal_success_title", "modal_job_applied_msg");
+            } catch (error) {
+                console.error("Error applying for job:", error);
+                showModal("modal_error_title", `Error: ${error.message}`);
+            }
+        }
+        
+        async function unsaveJob(jobId) {
+            if (!userId) return;
+            try {
+                await deleteDoc(doc(db, savedJobsCollectionPath, jobId));
+                showModal("modal_success_title", "modal_job_unsaved_msg");
+            } catch (error) {
+                console.error("Error unsaving job:", error);
+                showModal("modal_error_title", `Error: ${error.message}`);
+            }
+        }
+        
+        async function unapplyForJob(jobId) {
+            if (!userId) return;
+             try {
+                await deleteDoc(doc(db, applicationsCollectionPath, jobId));
+                showModal("modal_success_title", "modal_app_withdrawn_msg");
+            } catch (error) {
+                console.error("Error un-applying for job:", error);
+                showModal("modal_error_title", `Error: ${error.message}`);
+            }
+        }
+
+        // --- Search Function ---
+        function handleSearch() {
+            const roleQuery = document.getElementById('search-role').value.toLowerCase();
+            const locationQuery = document.getElementById('search-location').value.toLowerCase();
+
+            const filteredJobs = allJobsCache.filter(job => {
+                const titleMatch = job.title.toLowerCase().includes(roleQuery);
+                const companyMatch = job.company.toLowerCase().includes(roleQuery);
+                const locationMatch = job.location.toLowerCase().includes(locationQuery);
+                
+                return (titleMatch || companyMatch) && locationMatch;
+            });
+            
+            renderJobListings(filteredJobs);
+        }
+
+// --- Render Functions ---
+        
+        /**
+         * This function manually applies language to dynamic content
+         * *without* calling setLanguage() again to prevent stack overflow.
+         */
+        function applyLanguageToDynamicContent() {
+             // Only update text on elements that haven't been translated yet this cycle
+            document.querySelectorAll('[data-lang-key]:not(.translated)').forEach(el => {
+                const key = el.dataset.langKey;
+                const translation = translations[currentLang][key];
+                if (translation) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translation;
+                    } else {
+                        el.textContent = translation;
+                    }
+                    el.classList.add('translated'); // Mark as translated
+                }
+            });
+            // Reset translated status for next language change
+            // This is a bit of a hack, but prevents re-translation flicker
+            setTimeout(() => {
+                document.querySelectorAll('.translated').forEach(el => el.classList.remove('translated'));
+            }, 100);
+
+            // Finally, replace all icons
+            try {
+                lucide.createIcons();
+            } catch (e) { console.warn("Lucide icons failed", e); }
+        }
+
+        
+        // Renders all lists that depend on dynamic data
+        function renderAllDynamicLists() {
+            // Re-render main list
+            handleSearch();
+            
+            // Re-render private lists (these will fetch their own data)
+            if(userId) {
+                listenForSavedJobs();
+                listenForApplications();
+                listenForBusinessJobs();
+            }
+        }
+
+        // Render ALL jobs (public list)
+        function renderJobListings(jobs) {
+            jobListingsContainer.innerHTML = ''; // Clear existing
+            if (jobs.length === 0) {
+                noJobsMessage.style.display = 'block';
+                noJobsMessage.setAttribute('data-lang-key', 'no_jobs_msg');
+            } else {
+                noJobsMessage.style.display = 'none';
+                jobs.forEach(job => {
+                    jobListingsContainer.appendChild(createJobCard(job, 'student'));
+                });
+            }
+            // We call this *after* new elements are in the DOM
+            applyLanguageToDynamicContent();
+        }
+
+        // Render SAVED jobs (private list)
+        function renderSavedJobs(jobs) {
+            savedJobsContainer.innerHTML = '';
+            if (jobs.length === 0) {
+                noSavedJobsMessage.style.display = 'block';
+                noSavedJobsMessage.setAttribute('data-lang-key', 'no_saved_jobs_msg');
+            } else {
+                noSavedJobsMessage.style.display = 'none';
+                jobs.forEach(job => {
+                    savedJobsContainer.appendChild(createJobCard(job, 'saved'));
+                });
+            }
+            applyLanguageToDynamicContent();
+        }
+
+        // Render APPLIED jobs (private list)
+        function renderApplications(jobs) {
+            applicationsContainer.innerHTML = '';
+            if (jobs.length === 0) {
+                noApplicationsMessage.style.display = 'block';
+                noApplicationsMessage.setAttribute('data-lang-key', 'no_applications_msg');
+            } else {
+                noApplicationsMessage.style.display = 'none';
+                jobs.forEach(job => {
+                    applicationsContainer.appendChild(createJobCard(job, 'applied'));
+                });
+            }
+            applyLanguageToDynamicContent();
+        }
+        
+        // Render BUSINESS'S jobs (private list)
+        function renderBusinessJobs(jobs) {
+            businessJobsContainer.innerHTML = '';
+            if (jobs.length === 0) {
+                noBusinessJobsMessage.style.display = 'block';
+                noBusinessJobsMessage.setAttribute('data-lang-key', 'no_postings_msg');
+            } else {
+                noBusinessJobsMessage.style.display = 'none';
+                jobs.forEach(job => {
+                    businessJobsContainer.appendChild(createJobCard(job, 'business'));
+                });
+            }
+            applyLanguageToDynamicContent();
+        }
+        
+        /**
+         * Creates a job card element
+         * @param {object} job - The job data object
+         * @param {'student' | 'saved' | 'applied' | 'business'} context - The view context
+         * @returns {HTMLElement} The job card div
+         */
+        function createJobCard(job, context) {
+            const card = document.createElement('div');
+            card.className = 'job-card text-left';
+            
+            const isSaved = userSavedJobs.has(job.id);
+            const isApplied = userApplications.has(job.id);
+            const isOwner = job.businessOwnerId === userId;
+            
+            let buttonsHTML = '';
+            
+            if (context === 'student') {
+                // FIXED: Always show Save/Apply buttons on student page, regardless of owner
+                // Save Button
+                buttonsHTML += isSaved 
+                    ? `<button class="btn-danger" data-id="${job.id}" data-action="unsave" data-lang-key="card_unsave">Unsave</button>`
+                    : `<button class="btn-secondary" data-id="${job.id}" data-action="save" data-lang-key="card_save">Save</button>`;
+                
+                // Apply Button
+                buttonsHTML += isApplied
+                    ? `<button class="btn-danger ml-2" data-id="${job.id}" data-action="unapply" data-lang-key="card_withdraw">Withdraw Application</button>`
+                    : `<button class="btn-secondary ml-2" data-id="${job.id}" data-action="apply" data-lang-key="card_apply">Apply Now</button>`;
+                
+            } else if (context === 'saved') {
+                buttonsHTML = `<button class="btn-danger" data-id="${job.id}" data-action="unsave" data-lang-key="card_unsave">Unsave</button>`;
+            } else if (context === 'applied') {
+                buttonsHTML = `<button class="btn-danger" data-id="${job.id}" data-action="unapply" data-lang-key="card_withdraw">Withdraw Application</button>`;
+            } else if (context === 'business') {
+                 buttonsHTML = `<span class="text-sm font-medium text-gray-400" data-lang-key="card_posting">This is one of your postings.</span>`;
+            }
+
+            card.innerHTML = `
+                <h3 class="text-2xl font-bold text-cyan-400 mb-2">${job.title}</h3>
+                <p class="text-lg font-semibold text-gray-200 mb-3">${job.company}</p>
+                <div class="flex items-center text-gray-400 mb-2">
+                    <i data-lucide="map-pin"></i>
+                    <span>${job.location}</span>
+                </div>
+                <div class="flex items-center text-gray-400 mb-4">
+                    <i data-lucide="dollar-sign"></i>
+                    <span>${job.salary} per hour</span>
+                </div>
+                <p class="text-gray-300 mb-6">${job.description}</p>
+                <div class="flex justify-start gap-3">
+                    ${buttonsHTML}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // --- Error Display ---
+        function updatePermissionsErrorUI(path) {
+            // Show the main error card on the 'student' view
+            mainErrorCard.style.display = 'block';
+            window.scrollTo(0, 0); // Scroll to top to show the error
+            
+            // Translate and update text
+            mainErrorTitle.setAttribute('data-lang-key', 'error_permissions_title');
+            mainErrorTitle.textContent = translations[currentLang]['error_permissions_title'];
+            
+            mainErrorMessage.setAttribute('data-lang-key', 'error_permissions_body');
+            mainErrorMessage.textContent = translations[currentLang]['error_permissions_body'];
+
+            const fixText = translations[currentLang]['error_permissions_fix'];
+            // Display the full rule block in the code tag, replacing newlines with <br> for HTML
+            const ruleText = translations[currentLang]['error_permissions_rule']
+                                .replace(/\n/g, '<br/>')
+                                .replace(/  /g, '&nbsp;&nbsp;'); // Preserve indentation
+
+            mainErrorDetails.innerHTML = `${fixText}
+                <ol class="my-4">
+                    <li>Go to <strong>Firebase Console</strong> > <strong>Firestore Database</strong> > <strong>Rules</strong> tab.</li>
+                    <li><strong>Delete ALL</strong> existing text in the editor.</li>
+                    <li>Paste in the following complete ruleset:</li>
+                </ol>
+                <code class="block whitespace-pre-wrap p-4 bg-gray-900 border border-gray-700 rounded-md">${ruleText}</code>
+                <p class="mt-4">The path being blocked is: <code>${path}</code></p>`;
+        }
+
+
+        // --- 3D Background and Typing Animation ---
+        function initTypedJs() {
+            try {
+                new Typed('#typing-effect', {
+                    strings: [
+                        'Part-Time Jobs Near You',
+                        'Find Flexible Work',
+                        'Start Earning Today'
+                    ],
+                    typeSpeed: 50,
+                    backSpeed: 25,
+                    loop: true,
+                    smartBackspace: true
+                });
+            } catch (e) {
+                console.warn("Typed.js failed to load", e);
+            }
+        }
+
+        function initThreeJsBackground() {
+            try {
+                const canvas = document.getElementById('bg-canvas');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                const particleCount = 5000;
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const color = new THREE.Color();
+
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    positions[i3] = (Math.random() - 0.5) * 10;
+                    positions[i3 + 1] = (Math.random() - 0.5) * 10;
+                    positions[i3 + 2] = (Math.random() - 0.5) * 10;
+                    
+                    // Set color to cyan
+                    color.set(0x06b6d4); // cyan-500
+                    colors[i3] = color.r;
+                    colors[i3 + 1] = color.g;
+                    colors[i3 + 2] = color.b;
+                }
+
+                const particlesGeometry = new THREE.BufferGeometry();
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const particlesMaterial = new THREE.PointsMaterial({
+                    size: 0.02,
+                    vertexColors: true,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    opacity: 0.7
+                });
+
+                const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+                scene.add(particleSystem);
+
+                camera.position.z = 5;
+
+                let mouseX = 0;
+                let mouseY = 0;
+                document.addEventListener('mousemove', (event) => {
+                    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+                });
+
+                const clock = new THREE.Clock();
+                const animate = () => {
+                    const elapsedTime = clock.getElapsedTime();
+                    particleSystem.rotation.y = elapsedTime * 0.1;
+                    
+                    // Parallax effect
+                    camera.position.x += (mouseX - camera.position.x) * 0.02;
+                    camera.position.y += (mouseY - camera.position.y) * 0.02;
+
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
+                };
+                animate();
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                });
+            } catch (error) {
+                console.error("Three.js background failed to load:", error);
+            }
+        }
+        
+        // --- Icon Replacement ---
+        // We run this once at the end
+        try {
+            lucide.createIcons();
+        } catch (e) {
+            console.warn("Lucide icons failed to load", e);
+        }
+
+        // --- Start The App ---
+        initializeAppLogic();
+
+    </script>
+
+</body>
+</html>
+
